@@ -1,0 +1,7 @@
+{
+  "project_name": "skills",
+  "version": "1.0.0",
+  "default_data_dir": "data",
+  "date_format": "%Y-%m-%d",
+  "timezone": "Asia/Shanghai"
+}

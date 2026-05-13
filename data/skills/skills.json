@@ -1,0 +1,49 @@
+{
+  "Python": {
+    "name": "Python",
+    "category": "technical",
+    "level": 3,
+    "description": "主要编程语言",
+    "tags": [
+      "backend",
+      "automation",
+      "data"
+    ],
+    "created_at": "2026-05-13T03:45:46.871288",
+    "updated_at": "2026-05-13T03:45:46.871293",
+    "parent_skill": null,
+    "related_skills": [],
+    "total_hours": 0.0
+  },
+  "JavaScript": {
+    "name": "JavaScript",
+    "category": "technical",
+    "level": 2,
+    "description": "前端开发",
+    "tags": [
+      "frontend",
+      "web"
+    ],
+    "created_at": "2026-05-13T03:45:46.871304",
+    "updated_at": "2026-05-13T03:45:46.871304",
+    "parent_skill": null,
+    "related_skills": [],
+    "total_hours": 0.0
+  },
+  "深度学习": {
+    "name": "深度学习",
+    "category": "technical",
+    "level": 2,
+    "description": "神经网络与机器学习",
+    "tags": [
+      "AI",
+      "ML",
+      "Python"
+    ],
+    "created_at": "2026-05-13T03:45:46.871324",
+    "updated_at": "2026-05-13T03:45:46.871325",
+    "parent_skill": null,
+    "related_skills": [],
+    "total_hours": 0.0
+  }
+}
