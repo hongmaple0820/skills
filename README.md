@@ -1,208 +1,202 @@
-# 📚 Skills - 个人技能管理与日报系统
+# Skills Platform v2.0 🚀
 
-> 鸿枫的 skills 集合体 - 记录成长，追踪进步
+> 个人工作流操作系统 - 从日报工具到自动化工作流引擎
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com)
-[![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com)
+[![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
+## 📖 项目简介
 
-## 🌟 项目简介
+Skills Platform 是一个强大的个人技能管理与工作流自动化平台。v2.0 版本实现了从简单日报工具到完整工作流操作系统的升级，支持：
 
-Skills 是一个个人技能管理与日报系统，帮助你：
-- 📋 **系统化管理** 个人技能树
-- 📝 **每日记录** 学习内容与心得
-- 📊 **可视化追踪** 成长轨迹
-- 💡 **知识沉淀** 形成可复用的知识库
+- **原子化技能管理** - 将技能定义为可执行的能力单元
+- **YAML 工作流编排** - 类似 GitHub Actions 的声明式工作流定义
+- **DAG 执行引擎** - 支持串行/并行/条件分支/子工作流嵌套
+- **上下文传递** - 节点间数据流动 (`{{ nodes.xxx.output }}`)
+- **插件系统** - 动态加载技能节点，无需修改框架
 
----
+## 🏗️ 架构设计
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CLI / Web UI                            │
+├─────────────────────────────────────────────────────────────┤
+│                       Workflow Engine                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │ Sequential│  │ Parallel │  │ Decision │  │  Custom  │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
+├─────────────────────────────────────────────────────────────┤
+│                    Built-in Skill Nodes                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │DailyReport│  │CodeAnalysis│ │GitStats │  │  ...     │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
+├─────────────────────────────────────────────────────────────┤
+│                     Storage Layer                            │
+│  ┌──────────────────┐  ┌──────────────────┐                 │
+│  │   JSON Files     │  │    SQLite (opt)  │                 │
+│  └──────────────────┘  └──────────────────┘                 │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 🚀 快速开始
 
-### 1. 初始化项目
+### 安装依赖
 
 ```bash
-cd /workspace
-python -m src.core.initialize
+pip install pydantic pyyaml rich click networkx jinja2 pytest
 ```
 
-### 2. 使用 CLI 工具
+### 基本使用
 
-#### 查看帮助
+#### 1. 技能管理
+
 ```bash
-python -m src.cli --help
+# 添加技能
+PYTHONPATH=/workspace python src/cli/main.py skill add -n "Python" -l 3 -c technical -t backend
+
+# 查看技能列表
+PYTHONPATH=/workspace python src/cli/main.py skill list
+
+# 技能统计
+PYTHONPATH=/workspace python src/cli/main.py skill stats
 ```
 
-#### 管理技能
+#### 2. 工作流管理
+
 ```bash
-# 添加新技能
-python -m src.cli add-skill "Python" -c technical -l 3 -d "主要编程语言" -t "backend,automation"
+# 加载 YAML 工作流
+PYTHONPATH=/workspace python src/cli/main.py workflow load data/workflows/daily-review.yaml
 
-# 列出所有技能
-python -m src.cli list-skills
+# 查看工作流
+PYTHONPATH=/workspace python src/cli/main.py workflow list
 
-# 按分类筛选
-python -m src.cli list-skills -c technical
-
-# 查看统计
-python -m src.cli stats
-
-# 导出技能清单
-python -m src.cli export-skills -o skills.md
+# 执行工作流
+PYTHONPATH=/workspace python src/cli/main.py workflow run <workflow-id> -v key=value
 ```
 
-#### 记录日报
+#### 3. 日报管理
+
 ```bash
-# 添加学习记录
-python -m src.cli add-learning "Python" 2.0 "学习装饰器" -n "理解了@语法糖"
-
-# 添加心得
-python -m src.cli add-insight "装饰器本质是 higher-order function"
-
-# 记录问题
-python -m src.cli add-problem "装饰器参数传递" -s "使用 functools.wraps"
-
-# 添加明日计划
-python -m src.cli add-plan "学习生成器和迭代器"
-
-# 设置心情
-python -m src.cli set-mood 5
+# 手动添加日报
+PYTHONPATH=/workspace python src/cli/main.py daily add \
+  -s "Python" \
+  -c "学习了 Pydantic" \
+  -d 60 \
+  -i "心得 1" \
+  -p "问题 1" \
+  -P "明天计划" \
+  -m 4
 
 # 查看今日日报
-python -m src.cli today
-
-# 导出日报
-python -m src.cli export-report -d 2026-05-13
+PYTHONPATH=/workspace python src/cli/main.py daily today
 ```
-
-#### 周期统计
-```bash
-# 查看周期统计
-python -m src.cli period-stats --start 2026-01-01 --end 2026-12-31
-
-# 导出周期报告
-python -m src.cli export-report -p 2026-01-01:2026-01-31 -o january_report.md
-```
-
----
 
 ## 📁 项目结构
 
 ```
-skills/
-├── README.md              # 项目说明
-├── docs/
-│   └── blueprint.md       # 蓝图规划
+/workspace
 ├── src/
-│   ├── __init__.py
-│   ├── cli.py             # 命令行工具
-│   ├── core/
-│   │   ├── skill_manager.py   # 技能管理
-│   │   ├── daily_report.py    # 日报系统
-│   │   └── initialize.py      # 初始化
-│   └── models/
-│       ├── skill.py           # 技能模型
-│       └── daily_log.py       # 日志模型
+│   ├── core/           # 核心模型
+│   │   └── models.py   # Skill, Workflow, ExecutionContext 等
+│   ├── storage/        # 存储层
+│   │   └── base.py     # JSON/SQLite 存储实现
+│   ├── workflows/      # 工作流引擎
+│   │   ├── engine.py   # DAG 执行引擎
+│   │   └── parser.py   # YAML 解析器
+│   ├── nodes/          # 技能节点
+│   │   └── builtin.py  # 内置节点（日报、代码分析、Git 统计）
+│   └── cli/            # 命令行界面
+│       └── main.py     # CLI 入口
 ├── data/
-│   ├── skills/            # 技能数据
-│   ├── logs/              # 日志数据
-│   └── reports/           # 报告输出
-├── config/
-│   └── settings.json      # 配置文件
-└── requirements.txt       # 依赖管理
+│   ├── schemas/        # JSON Schema
+│   │   └── workflow.json
+│   ├── workflows/      # YAML 工作流定义
+│   │   └── daily-review.yaml
+│   └── *.json          # 数据存储文件
+├── tests/
+│   ├── unit/           # 单元测试
+│   └── integration/    # 集成测试
+└── docs/               # 文档
+    ├── blueprint.md
+    ├── architecture_assessment_v2.md
+    └── implementation_plan_v2.md
 ```
 
----
+## 🔧 自定义工作流
 
-## 🛠️ 命令参考
+创建 `my-workflow.yaml`:
 
-| 命令 | 说明 | 示例 |
+```yaml
+name: "My Custom Workflow"
+description: "自定义工作流示例"
+version: "1.0.0"
+entry_point: "start"
+
+variables:
+  my_var: "hello"
+
+nodes:
+  start:
+    name: "开始"
+    type: sequential
+    children:
+      - node1
+      - node2
+
+  node1:
+    name: "自定义节点"
+    type: custom
+    metadata:
+      handler: daily_report
+    inputs:
+      skill_name: "My Skill"
+      learning_content: "学习内容"
+      duration_minutes: 30
+      mood: 4
+
+  node2:
+    name: "条件节点"
+    type: decision
+    condition: "{{ nodes.node1.output.success }}"
+    metadata:
+      branches:
+        success: "true"
+        fail: "false"
+```
+
+## 🧪 运行测试
+
+```bash
+PYTHONPATH=/workspace pytest tests/ -v
+```
+
+## 📊 功能对比
+
+| 功能 | v1.0 | v2.0 |
 |------|------|------|
-| `add-skill` | 添加新技能 | `add-skill "JS" -c technical -l 2` |
-| `list-skills` | 列出技能 | `list-skills -c technical` |
-| `stats` | 技能统计 | `stats` |
-| `export-skills` | 导出技能清单 | `export-skills -o skills.md` |
-| `add-learning` | 添加学习记录 | `add-learning "Python" 1.5 "内容"` |
-| `add-insight` | 添加心得 | `add-insight "心得体会"` |
-| `add-problem` | 记录问题 | `add-problem "问题" -s "解决"` |
-| `add-plan` | 添加计划 | `add-plan "明日计划"` |
-| `set-mood` | 设置心情 | `set-mood 4` |
-| `today` | 查看今日日报 | `today` |
-| `period-stats` | 周期统计 | `period-stats --start 2026-01-01` |
-| `export-report` | 导出报告 | `export-report -d 2026-05-13` |
+| 技能管理 | ✅ | ✅ |
+| 日报记录 | ✅ | ✅ |
+| 工作流引擎 | ❌ | ✅ |
+| YAML 编排 | ❌ | ✅ |
+| 并行执行 | ❌ | ✅ |
+| 条件分支 | ❌ | ✅ |
+| 子工作流 | ❌ | ✅ |
+| 插件系统 | ❌ | ✅ |
+| 上下文传递 | ❌ | ✅ |
 
----
+## 🎯 路线图
 
-## 📊 日报模板示例
+- [ ] v2.1: Web 可视化编排界面
+- [ ] v2.2: AI 辅助创建工作流
+- [ ] v2.3: 定时任务调度器
+- [ ] v2.4: 团队协作功能
+- [ ] v2.5: 云同步服务
 
-```markdown
-# 日报 - 2026-05-13
-
-## 📚 今日学习
-- **深度学习** | 2.0h | 学习反向传播算法
-  - _理解了梯度下降的原理_
-
-## 💡 收获与心得
-- 反向传播是神经网络训练的核心
-
-## 🐛 遇到的问题
-- **问题**: 梯度消失问题
-  - **解决**: 使用 ReLU 激活函数
-
-## 📝 明日计划
-- [ ] 学习卷积神经网络 CNN
-
-## 📊 今日统计
-- 总学习时长：2.0 小时
-- 涉及技能：1 个
-- 心情指数：⭐⭐⭐⭐⭐
-```
-
----
-
-## 🔧 配置说明
-
-配置文件位于 `config/settings.json`:
-
-```json
-{
-  "project_name": "skills",
-  "version": "1.0.0",
-  "default_data_dir": "data",
-  "date_format": "%Y-%m-%d",
-  "timezone": "Asia/Shanghai"
-}
-```
-
----
-
-## 📈 开发路线图
-
-- ✅ **v1.0** - 基础功能 (CLI + 数据存储)
-- 🔄 **v1.1** - 数据可视化 (图表生成)
-- 📅 **v2.0** - Web 界面 (FastAPI + Vue)
-- 📅 **v2.5** - AI 辅助建议
-- 📅 **v3.0** - 多端同步
-
-详细规划请查看 [蓝图文档](docs/blueprint.md)
-
----
-
-## 🤝 贡献指南
-
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'feat: add AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
----
-
-## 📄 许可证
+## 📝 License
 
 MIT License
 
 ---
 
-*Made with ❤️ by 鸿枫*
+**Built with ❤️ using Python & Pydantic**

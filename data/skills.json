@@ -1,0 +1,17 @@
+[
+  {
+    "id": "d1604be0",
+    "name": "Python Development",
+    "description": "Python 编程技能",
+    "level": 3,
+    "category": "technical",
+    "tags": [
+      "backend",
+      "scripting"
+    ],
+    "actions": [],
+    "created_at": "2026-05-13 04:42:50.092865",
+    "updated_at": "2026-05-13 04:42:50.092869",
+    "metadata": {}
+  }
+]
