@@ -1,0 +1,145 @@
+[
+  {
+    "id": "88d0ee8e",
+    "name": "Daily Review Workflow",
+    "description": "每日复盘工作流：收集 Git 提交、代码变更、生成日报",
+    "version": "1.0.0",
+    "nodes": {
+      "start": {
+        "id": "start",
+        "name": "开始",
+        "node_type": "sequential",
+        "skill_id": null,
+        "action": null,
+        "condition": null,
+        "inputs": {},
+        "outputs": {},
+        "children": [
+          "git_stats_node",
+          "code_analysis_node",
+          "daily_report_node"
+        ],
+        "retry_count": 0,
+        "timeout": null,
+        "metadata": {}
+      },
+      "git_stats_node": {
+        "id": "git_stats_node",
+        "name": "收集 Git 统计",
+        "node_type": "custom",
+        "skill_id": null,
+        "action": null,
+        "condition": null,
+        "inputs": {
+          "repo_path": "{{ variables.repo_path }}",
+          "days": "{{ variables.days }}"
+        },
+        "outputs": {
+          "commits": "{{ nodes.git_stats_node.output.commits_count }}",
+          "insertions": "{{ nodes.git_stats_node.output.insertions }}"
+        },
+        "children": [],
+        "retry_count": 0,
+        "timeout": null,
+        "metadata": {
+          "handler": "git_stats"
+        }
+      },
+      "code_analysis_node": {
+        "id": "code_analysis_node",
+        "name": "分析今日代码",
+        "node_type": "custom",
+        "skill_id": null,
+        "action": null,
+        "condition": "{{ nodes.git_stats_node.output.commits_count > 0 }}",
+        "inputs": {
+          "file_path": "./src",
+          "language": "python"
+        },
+        "outputs": {},
+        "children": [],
+        "retry_count": 0,
+        "timeout": null,
+        "metadata": {
+          "handler": "code_analysis"
+        }
+      },
+      "daily_report_node": {
+        "id": "daily_report_node",
+        "name": "生成日报",
+        "node_type": "custom",
+        "skill_id": null,
+        "action": null,
+        "condition": null,
+        "inputs": {
+          "skill_name": "Python Development",
+          "learning_content": "今日完成 {{ nodes.git_stats_node.output.commits_count }} 次提交，新增 {{ nodes.git_stats_node.output.insertions }} 行代码",
+          "duration_minutes": 480,
+          "insights": [
+            "完成了核心功能开发",
+            "优化了代码结构"
+          ],
+          "problems": [
+            "需要改进测试覆盖率"
+          ],
+          "plans": [
+            "明天继续完善功能",
+            "编写单元测试"
+          ],
+          "mood": "{{ variables.default_mood }}"
+        },
+        "outputs": {},
+        "children": [],
+        "retry_count": 0,
+        "timeout": null,
+        "metadata": {
+          "handler": "daily_report"
+        }
+      },
+      "end": {
+        "id": "end",
+        "name": "结束",
+        "node_type": "skill_action",
+        "skill_id": null,
+        "action": null,
+        "condition": null,
+        "inputs": {
+          "skill_name": "Python Development",
+          "action": "info"
+        },
+        "outputs": {},
+        "children": [],
+        "retry_count": 0,
+        "timeout": null,
+        "metadata": {
+          "handler": "skill_progress"
+        }
+      }
+    },
+    "entry_point": "start",
+    "triggers": [
+      {
+        "type": "scheduled",
+        "cron": "0 21 * * *",
+        "event": null
+      },
+      {
+        "type": "manual",
+        "cron": null,
+        "event": null
+      }
+    ],
+    "variables": {
+      "repo_path": ".",
+      "days": 7,
+      "default_mood": 4
+    },
+    "created_at": "2026-05-13 04:43:13.929546",
+    "updated_at": "2026-05-13 04:43:13.929554",
+    "tags": [
+      "daily",
+      "review",
+      "automation"
+    ]
+  }
+]

@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skills Platform Workflow",
+  "description": "JSON Schema for workflow definition",
+  "type": "object",
+  "required": ["name", "entry_point", "nodes"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "工作流名称"
+    },
+    "description": {
+      "type": "string",
+      "description": "工作流描述"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0",
+      "description": "语义化版本号"
+    },
+    "entry_point": {
+      "type": "string",
+      "description": "入口节点 ID"
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "标签列表"
+    },
+    "variables": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "全局变量"
+    },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["manual", "scheduled", "event"]
+          },
+          "cron": {
+            "type": "string",
+            "description": "定时任务表达式 (仅 scheduled 类型)"
+          },
+          "event": {
+            "type": "string",
+            "description": "事件名称 (仅 event 类型)"
+          }
+        }
+      },
+      "default": [],
+      "description": "触发器列表"
+    },
+    "nodes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "type": {
+            "type": "string",
+            "enum": ["skill_action", "decision", "parallel", "sequential", "sub_workflow", "custom"]
+          },
+          "skill_id": {
+            "type": "string",
+            "description": "关联的技能 ID"
+          },
+          "action": {
+            "type": "object",
+            "required": ["action_type", "target"],
+            "properties": {
+              "action_type": {
+                "type": "string",
+                "enum": ["cli_function", "api_call", "workflow_trigger"]
+              },
+              "target": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "condition": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "object"}
+            ],
+            "description": "Jinja2 模板条件表达式"
+          },
+          "inputs": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "default": {},
+            "description": "输入映射"
+          },
+          "outputs": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "default": {},
+            "description": "输出映射"
+          },
+          "children": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "array", "items": {"type": "string"}}
+            ],
+            "default": [],
+            "description": "子节点 ID 列表"
+          },
+          "retry_count": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "超时秒数"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "default": {}
+          }
+        }
+      },
+      "description": "节点定义"
+    }
+  }
+}

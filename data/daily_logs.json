@@ -1,0 +1,46 @@
+[
+  {
+    "id": "4d633cd6",
+    "date": "2026-05-13",
+    "skill_id": "d1604be0",
+    "skill_name": "Python Development",
+    "learning_content": "今日完成 {{ nodes.git_stats_node.output.commits_count }} 次提交，新增 {{ nodes.git_stats_node.output.insertions }} 行代码",
+    "duration_minutes": 480,
+    "insights": [
+      "完成了核心功能开发",
+      "优化了代码结构"
+    ],
+    "problems": [
+      "需要改进测试覆盖率"
+    ],
+    "plans": [
+      "明天继续完善功能",
+      "编写单元测试"
+    ],
+    "mood": 4,
+    "workflow_execution_id": "00c68bf2-ac9",
+    "created_at": "2026-05-13 04:43:57.928194"
+  },
+  {
+    "id": "c6824e9d",
+    "date": "2026-05-13",
+    "skill_id": "d1604be0",
+    "skill_name": "Python Development",
+    "learning_content": "今日完成 {{ nodes.git_stats_node.output.commits_count }} 次提交，新增 {{ nodes.git_stats_node.output.insertions }} 行代码",
+    "duration_minutes": 480,
+    "insights": [
+      "完成了核心功能开发",
+      "优化了代码结构"
+    ],
+    "problems": [
+      "需要改进测试覆盖率"
+    ],
+    "plans": [
+      "明天继续完善功能",
+      "编写单元测试"
+    ],
+    "mood": 4,
+    "workflow_execution_id": "00c68bf2-ac9",
+    "created_at": "2026-05-13 04:43:57.947593"
+  }
+]
