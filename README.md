@@ -1,202 +1,169 @@
-# Skills Platform v2.0 🚀
+# Skills Platform v2.0
 
-> 个人工作流操作系统 - 从日报工具到自动化工作流引擎
+个人技能管理与工作流系统。当前代码库已经从早期的日报记录工具，演进为一套以 `Pydantic` 模型、`StorageManager` 存储层和 YAML 工作流执行引擎为核心的本地工作流平台。
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com)
-[![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## 当前能力
 
-## 📖 项目简介
+- 技能管理：新增、查询、统计、删除技能
+- 日报记录：手工录入、按日查看
+- 工作流执行：加载 YAML、执行顺序/并行/条件节点
+- 模型迁移：v1 legacy dataclass -> v2 Pydantic
+- 日报渲染：输出海报、截图底板、交互组件、文章页
+- 主题预览：一条命令批量预览全部日报主题
 
-Skills Platform 是一个强大的个人技能管理与工作流自动化平台。v2.0 版本实现了从简单日报工具到完整工作流操作系统的升级，支持：
+## 目录结构
 
-- **原子化技能管理** - 将技能定义为可执行的能力单元
-- **YAML 工作流编排** - 类似 GitHub Actions 的声明式工作流定义
-- **DAG 执行引擎** - 支持串行/并行/条件分支/子工作流嵌套
-- **上下文传递** - 节点间数据流动 (`{{ nodes.xxx.output }}`)
-- **插件系统** - 动态加载技能节点，无需修改框架
-
-## 🏗️ 架构设计
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      CLI / Web UI                            │
-├─────────────────────────────────────────────────────────────┤
-│                       Workflow Engine                        │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
-│  │ Sequential│  │ Parallel │  │ Decision │  │  Custom  │    │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│                    Built-in Skill Nodes                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
-│  │DailyReport│  │CodeAnalysis│ │GitStats │  │  ...     │    │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│                     Storage Layer                            │
-│  ┌──────────────────┐  ┌──────────────────┐                 │
-│  │   JSON Files     │  │    SQLite (opt)  │                 │
-│  └──────────────────┘  └──────────────────┘                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## 🚀 快速开始
-
-### 安装依赖
-
-```bash
-pip install pydantic pyyaml rich click networkx jinja2 pytest
-```
-
-### 基本使用
-
-#### 1. 技能管理
-
-```bash
-# 添加技能
-PYTHONPATH=/workspace python src/cli/main.py skill add -n "Python" -l 3 -c technical -t backend
-
-# 查看技能列表
-PYTHONPATH=/workspace python src/cli/main.py skill list
-
-# 技能统计
-PYTHONPATH=/workspace python src/cli/main.py skill stats
-```
-
-#### 2. 工作流管理
-
-```bash
-# 加载 YAML 工作流
-PYTHONPATH=/workspace python src/cli/main.py workflow load data/workflows/daily-review.yaml
-
-# 查看工作流
-PYTHONPATH=/workspace python src/cli/main.py workflow list
-
-# 执行工作流
-PYTHONPATH=/workspace python src/cli/main.py workflow run <workflow-id> -v key=value
-```
-
-#### 3. 日报管理
-
-```bash
-# 手动添加日报
-PYTHONPATH=/workspace python src/cli/main.py daily add \
-  -s "Python" \
-  -c "学习了 Pydantic" \
-  -d 60 \
-  -i "心得 1" \
-  -p "问题 1" \
-  -P "明天计划" \
-  -m 4
-
-# 查看今日日报
-PYTHONPATH=/workspace python src/cli/main.py daily today
-```
-
-## 📁 项目结构
-
-```
-/workspace
+```text
+skills/
 ├── src/
-│   ├── core/           # 核心模型
-│   │   └── models.py   # Skill, Workflow, ExecutionContext 等
-│   ├── storage/        # 存储层
-│   │   └── base.py     # JSON/SQLite 存储实现
-│   ├── workflows/      # 工作流引擎
-│   │   ├── engine.py   # DAG 执行引擎
-│   │   └── parser.py   # YAML 解析器
-│   ├── nodes/          # 技能节点
-│   │   └── builtin.py  # 内置节点（日报、代码分析、Git 统计）
-│   └── cli/            # 命令行界面
-│       └── main.py     # CLI 入口
-├── data/
-│   ├── schemas/        # JSON Schema
-│   │   └── workflow.json
-│   ├── workflows/      # YAML 工作流定义
-│   │   └── daily-review.yaml
-│   └── *.json          # 数据存储文件
-├── tests/
-│   ├── unit/           # 单元测试
-│   └── integration/    # 集成测试
-└── docs/               # 文档
-    ├── blueprint.md
-    ├── architecture_assessment_v2.md
-    └── implementation_plan_v2.md
+│   ├── cli/               # CLI 入口
+│   ├── core/              # v2 核心模型与业务层
+│   ├── reports/           # 日报渲染与主题系统
+│   ├── storage/           # JSON / SQLite 存储
+│   ├── workflows/         # 工作流解析与执行引擎
+│   └── nodes/             # 内置工作流节点
+├── scripts/               # 迁移与校验脚本
+├── docs/                  # 架构与使用文档
+├── data/                  # 本地数据与渲染输出
+└── tests/                 # 单元测试
 ```
 
-## 🔧 自定义工作流
-
-创建 `my-workflow.yaml`:
-
-```yaml
-name: "My Custom Workflow"
-description: "自定义工作流示例"
-version: "1.0.0"
-entry_point: "start"
-
-variables:
-  my_var: "hello"
-
-nodes:
-  start:
-    name: "开始"
-    type: sequential
-    children:
-      - node1
-      - node2
-
-  node1:
-    name: "自定义节点"
-    type: custom
-    metadata:
-      handler: daily_report
-    inputs:
-      skill_name: "My Skill"
-      learning_content: "学习内容"
-      duration_minutes: 30
-      mood: 4
-
-  node2:
-    name: "条件节点"
-    type: decision
-    condition: "{{ nodes.node1.output.success }}"
-    metadata:
-      branches:
-        success: "true"
-        fail: "false"
-```
-
-## 🧪 运行测试
+## 安装
 
 ```bash
-PYTHONPATH=/workspace pytest tests/ -v
+pip install -r requirements.txt
 ```
 
-## 📊 功能对比
+## 快速开始
 
-| 功能 | v1.0 | v2.0 |
-|------|------|------|
-| 技能管理 | ✅ | ✅ |
-| 日报记录 | ✅ | ✅ |
-| 工作流引擎 | ❌ | ✅ |
-| YAML 编排 | ❌ | ✅ |
-| 并行执行 | ❌ | ✅ |
-| 条件分支 | ❌ | ✅ |
-| 子工作流 | ❌ | ✅ |
-| 插件系统 | ❌ | ✅ |
-| 上下文传递 | ❌ | ✅ |
+初始化或查看 CLI：
 
-## 🎯 路线图
+```bash
+python -m src.cli.main --help
+python src\cli.py --help
+```
 
-- [ ] v2.1: Web 可视化编排界面
-- [ ] v2.2: AI 辅助创建工作流
-- [ ] v2.3: 定时任务调度器
-- [ ] v2.4: 团队协作功能
-- [ ] v2.5: 云同步服务
+运行测试：
 
-## 📝 License
+```bash
+python -m pytest tests -q
+```
 
-MIT License
+## 常用命令
 
----
+技能管理：
 
-**Built with ❤️ using Python & Pydantic**
+```bash
+python -m src.cli.main skill add -n "Python" -l 3 -c technical -t backend
+python -m src.cli.main skill list
+python -m src.cli.main skill stats
+```
+
+工作流：
+
+```bash
+python -m src.cli.main workflow load data/workflows/daily-review.yaml
+python -m src.cli.main workflow list
+python -m src.cli.main workflow run <workflow-id> -v key=value
+```
+
+日报：
+
+```bash
+python -m src.cli.main daily add ^
+  --skill "LLM Workflow" ^
+  --content "优化日报工作流渲染器" ^
+  --duration 90 ^
+  --insight "统一渲染模型和主题体系" ^
+  --problem "公众号正文无法直接执行自定义脚本" ^
+  --plan "补长图模板" ^
+  --mood 4
+
+python -m src.cli.main daily today
+```
+
+## 日报渲染
+
+生成单主题日报：
+
+```bash
+python -m src.cli.main daily render ^
+  --date 2026-05-13 ^
+  --theme maple-ai ^
+  --title "AI 科技日报" ^
+  --description "聚焦 AI 技术推进、工作流执行与次日动作的高密度日报卡片。" ^
+  --author "Codex" ^
+  --source-name "Skills Platform" ^
+  --source-statement "数据来自 Skills Platform 当日工作流与日报记录，仅用于复盘与发布。" ^
+  --user-note "枫叶红 / 秋金黄 / 自然绿品牌体系"
+```
+
+当前会输出：
+
+- `poster.png`：适合公众号正文直接发图
+- `poster.svg`：高清海报源文件
+- `poster.html`：截图底板
+- `widget.html`：交互版组件
+- `article.html`：文章嵌入页
+
+批量预览全部主题：
+
+```bash
+python -m src.cli.main daily theme list --date 2026-05-13
+```
+
+该命令会：
+
+- 在终端列出主题 `key / 名称 / 说明 / 品牌色`
+- 自动生成主题预览页 `data/reports/daily-<date>-theme-gallery.html`
+
+## 主题体系
+
+当前内置主题：
+
+- `maple-ai`：AI 科技，强调信号密度、工作流推进和复盘节奏
+- `maple-editorial`：品牌专栏，强调更接近内容成稿的出版感
+
+品牌色体系：
+
+- 枫叶红 `#B63A2B`
+- 秋金黄 `#D89B1D`
+- 自然绿 `#557C3E`
+
+## 模型与迁移
+
+项目目前同时保留两套模型：
+
+- `src/models/`：v1 legacy dataclass，仅用于旧数据来源
+- `src/core/models.py`：v2 当前标准模型，所有新代码应统一使用
+
+迁移与校验脚本：
+
+```bash
+python scripts/migrate_v1_to_v2.py --dry
+python scripts/verify_models.py
+```
+
+详细说明见：
+
+- [模型架构说明](F:/project/skills/docs/architecture/model-architecture.md)
+- [日报渲染指南](F:/project/skills/docs/daily-report-rendering.md)
+
+## 当前约束
+
+- 公众号正文不适合直接承载自定义前端脚本
+- 交互版日报更适合 H5、知识库、官网文章页或原文跳转页
+- `data/reports/` 下的渲染产物是生成物，不建议作为源码提交
+
+## 开发说明
+
+- 代码编辑优先使用 `src/core/models.py` 里的 v2 模型
+- `src/core`、`src/workflows`、`src/nodes` 不应直接依赖 legacy v1 模型
+- 测试覆盖重点在模型迁移、工作流执行语义、日报渲染输出
+
+## 相关文档
+
+- [架构评估](F:/project/skills/docs/architecture_assessment_v2.md)
+- [实施计划](F:/project/skills/docs/implementation_plan_v2.md)
+- [模型架构](F:/project/skills/docs/architecture/model-architecture.md)
+- [日报渲染指南](F:/project/skills/docs/daily-report-rendering.md)

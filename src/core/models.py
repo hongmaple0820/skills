@@ -158,7 +158,7 @@ class DailyLogEntry(BaseModel):
     learning_content: str
     duration_minutes: int = 0
     insights: List[str] = Field(default_factory=list)
-    problems: List[str] = Field(default_factory=list)
+    problems: List[str] = Field(default_factory=list, description="v1 迁移时请用 convert_v1_problems()")
     plans: List[str] = Field(default_factory=list)
     mood: Optional[int] = Field(None, ge=1, le=5)  # 1-5
     workflow_execution_id: Optional[str] = None  # 关联的工作流执行 ID
@@ -177,3 +177,52 @@ class MoodEmoji(str, Enum):
     def from_int(cls, value: int) -> str:
         mapping = {5: cls.EXCELLENT, 4: cls.GOOD, 3: cls.NEUTRAL, 2: cls.BAD, 1: cls.TERRIBLE}
         return mapping.get(value, cls.NEUTRAL).value
+
+
+# ─── v1 ↔ v2 迁移映射 ─────────────────────────────
+# v1 SkillLevel: BEGINNER=1, INTERMEDIATE=2, ADVANCED=3, EXPERT=4, MASTER=5
+# v2 SkillLevel: NOVICE=1, BEGINNER=2, INTERMEDIATE=3, ADVANCED=4, EXPERT=5
+# 语义映射（按名称对齐，不按数字裸转）：
+#   v1 BEGINNER(1)    → v2 BEGINNER(2)     | v2 NOVICE(1)     → v1 BEGINNER(1)
+#   v1 INTERMEDIATE(2) → v2 INTERMEDIATE(3) | v2 BEGINNER(2)   → v1 BEGINNER(1)
+#   v1 ADVANCED(3)    → v2 ADVANCED(4)     | v2 INTERMEDIATE(3)→ v1 INTERMEDIATE(2)
+#   v1 EXPERT(4)      → v2 EXPERT(5)       | v2 ADVANCED(4)   → v1 ADVANCED(3)
+#   v1 MASTER(5)      → v2 EXPERT(5)       | v2 EXPERT(5)     → v1 EXPERT(4)
+V1_TO_V2_LEVEL = {1: 2, 2: 3, 3: 4, 4: 5, 5: 5}
+V2_TO_V1_LEVEL = {1: 1, 2: 1, 3: 2, 4: 3, 5: 4}
+
+# v1 SkillCategory: TECHNICAL, SOFT_SKILL, LANGUAGE, MANAGEMENT, DESIGN, OTHER
+# v2 SkillCategory: TECHNICAL, SOFT_SKILL, DOMAIN_KNOWLEDGE, TOOL, LANGUAGE, OTHER
+V1_TO_V2_CATEGORY = {
+    "technical": "technical",
+    "soft_skill": "soft_skill",
+    "language": "language",
+    "other": "other",
+    # v1-only → v2 无对应，映射到 OTHER 并存 metadata
+    "management": "other",
+    "design": "other",
+}
+
+
+def convert_v1_problems(v1_problems: list) -> list:
+    """将 v1 的 [{problem, solution}] 转为 v2 的 [str]"""
+    if not v1_problems:
+        return []
+    # v2 已是 List[str]
+    if all(isinstance(p, str) for p in v1_problems):
+        return v1_problems
+    # v1 是 List[dict]
+    result = []
+    for p in v1_problems:
+        if isinstance(p, dict):
+            prob = p.get("problem", "")
+            sol = p.get("solution", "")
+            if prob and sol:
+                result.append(f"问题: {prob} | 解决: {sol}")
+            elif prob:
+                result.append(f"问题: {prob}")
+            else:
+                result.append(sol or str(p))
+        else:
+            result.append(str(p))
+    return result

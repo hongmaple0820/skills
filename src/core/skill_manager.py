@@ -1,5 +1,8 @@
 """
-技能管理模块
+技能管理模块 (v1 Legacy)
+
+⚠️ 已废弃：请使用 src.storage.base.StorageManager + src.core.models.Skill 替代。
+此模块保留以供旧数据迁移参考，不应用于新代码。
 """
 import json
 import os

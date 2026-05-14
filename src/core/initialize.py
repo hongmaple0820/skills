@@ -24,31 +24,35 @@ def initialize_project():
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         print(f"✅ 创建目录：{dir_path}")
     
-    # 创建示例技能数据
-    sample_skills = {
-        "Python": {
-            "name": "Python",
-            "category": "technical",
-            "level": 3,
-            "description": "主要编程语言",
-            "tags": ["backend", "automation", "data"],
-            "total_hours": 0.0
-        },
-        "JavaScript": {
-            "name": "JavaScript",
-            "category": "technical",
-            "level": 2,
-            "description": "前端开发",
-            "tags": ["frontend", "web"],
-            "total_hours": 0.0
-        }
-    }
-    
-    skills_file = Path("data/skills/skills.json")
-    if not skills_file.exists():
-        with open(skills_file, 'w', encoding='utf-8') as f:
-            json.dump(sample_skills, f, ensure_ascii=False, indent=2)
-        print("✅ 创建示例技能数据")
+    # 创建示例技能数据（v2 格式）
+    from src.core.models import Skill, SkillLevel, SkillCategory
+
+    sample_skills = [
+        Skill(
+            name="Python",
+            level=SkillLevel.ADVANCED,
+            category=SkillCategory.TECHNICAL,
+            description="主要编程语言",
+            tags=["backend", "automation", "data"]
+        ),
+        Skill(
+            name="JavaScript",
+            level=SkillLevel.INTERMEDIATE,
+            category=SkillCategory.TECHNICAL,
+            description="前端开发",
+            tags=["frontend", "web"]
+        )
+    ]
+
+    from src.storage.base import StorageManager
+    storage = StorageManager()
+    existing = storage.skill_storage().get_all()
+    existing_names = {s.name for s in existing}
+
+    for skill in sample_skills:
+        if skill.name not in existing_names:
+            storage.skill_storage().save(skill)
+            print(f"✅ 创建示例技能：{skill.name}")
     
     # 创建配置文件
     config = {

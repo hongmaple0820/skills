@@ -4,9 +4,15 @@ Skills 命令行工具
 import argparse
 import sys
 from datetime import date, datetime
+from pathlib import Path
 
-from .core.skill_manager import SkillManager
-from .core.daily_report import DailyReportManager
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from src.core.skill_manager import SkillManager
+    from src.core.daily_report import DailyReportManager
+else:
+    from .core.skill_manager import SkillManager
+    from .core.daily_report import DailyReportManager
 
 
 def cmd_add_skill(args):

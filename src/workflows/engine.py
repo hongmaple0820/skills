@@ -5,7 +5,7 @@ DAG 执行引擎，支持串行/并行/条件分支/子工作流嵌套
 import asyncio
 from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime
-from jinja2 import Template
+from jinja2 import Environment
 
 from ..core.models import (
     Workflow, WorkflowNode, WorkflowNodeType, ExecutionContext,
@@ -33,45 +33,68 @@ class WorkflowEngine:
             WorkflowNodeType.CUSTOM: self._execute_custom,
         }
         self._custom_handlers: Dict[str, Callable] = {}
+        self._template_env = Environment()
 
     def register_custom_handler(self, name: str, handler: Callable):
         """注册自定义节点处理器"""
         self._custom_handlers[name] = handler
 
+    def _template_context(self, context: ExecutionContext) -> Dict[str, Any]:
+        return {
+            "nodes": context.node_results,
+            "variables": context.variables,
+            "execution_id": context.execution_id,
+            "workflow_id": context.workflow_id,
+        }
+
     def resolve_template(self, template_str: str, context: ExecutionContext) -> Any:
         """解析 Jinja2 模板表达式"""
-        # 如果不是字符串，直接返回
         if not isinstance(template_str, str):
             return template_str
-        
-        # 如果不是模板表达式，直接返回
-        if not template_str.startswith("{{") or not template_str.endswith("}}"):
+
+        if "{{" not in template_str or "}}" not in template_str:
             return template_str
-        
-        expr = template_str[2:-2].strip()
+
+        template_context = self._template_context(context)
+        stripped = template_str.strip()
+
+        if stripped.startswith("{{") and stripped.endswith("}}") and stripped.count("{{") == 1:
+            expr = stripped[2:-2].strip()
+            try:
+                return self._template_env.compile_expression(expr)(**template_context)
+            except Exception as e:
+                raise NodeExecutionError(f"Template expression failed: {e}")
+
         try:
-            template = Template(expr)
-            return template.render(
-                nodes=context.node_results,
-                variables=context.variables,
-                execution_id=context.execution_id,
-                workflow_id=context.workflow_id
-            )
+            return self._template_env.from_string(template_str).render(**template_context)
         except Exception as e:
             raise NodeExecutionError(f"Template resolution failed: {e}")
+
+    def resolve_value(self, value: Any, context: ExecutionContext) -> Any:
+        """递归解析输入中的模板值。"""
+        if isinstance(value, dict):
+            return {key: self.resolve_value(item, context) for key, item in value.items()}
+        if isinstance(value, list):
+            return [self.resolve_value(item, context) for item in value]
+        return self.resolve_template(value, context)
+
+    def _coerce_condition(self, value: Any) -> bool:
+        """将模板结果转换为条件布尔值。"""
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return False
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"", "false", "0", "none", "null", "no"}:
+                return False
+        return bool(value)
 
     def resolve_inputs(self, node: WorkflowNode, context: ExecutionContext) -> Dict[str, Any]:
         """解析节点输入"""
         resolved = {}
         for key, value in node.inputs.items():
-            resolved_value = self.resolve_template(value, context)
-            
-            # 如果解析后还是模板字符串（变量不存在），尝试从 context.variables 获取
-            if isinstance(resolved_value, str) and resolved_value.startswith("variables."):
-                var_name = resolved_value.replace("variables.", "")
-                resolved_value = context.variables.get(var_name, resolved_value)
-            
-            resolved[key] = resolved_value
+            resolved[key] = self.resolve_value(value, context)
         return resolved
 
     async def execute_node(self, node: WorkflowNode, context: ExecutionContext) -> Dict[str, Any]:
@@ -81,7 +104,7 @@ class WorkflowEngine:
         # 检查条件
         if node.condition:
             condition_result = self.resolve_template(node.condition, context)
-            if not condition_result:
+            if not self._coerce_condition(condition_result):
                 context.add_log(node.id, f"Condition not met, skipping: {node.condition}", "warning")
                 return {"skipped": True, "reason": "condition_not_met"}
 
@@ -132,6 +155,10 @@ class WorkflowEngine:
             # 尝试从技能获取动作
             skill_storage = self.storage.skill_storage()
             skill = skill_storage.get(node.skill_id)
+            # name-based fallback: 如果 ID 查询失败，尝试按名称查找
+            if skill is None:
+                results = skill_storage.query({'name': node.skill_id})
+                skill = results[0] if results else None
             if not skill or not skill.actions:
                 raise NodeExecutionError(f"No action defined for node: {node.name}")
             action = skill.actions[0]  # 使用第一个动作
@@ -199,7 +226,7 @@ class WorkflowEngine:
         selected_branch = None
         
         for branch_name, condition in branches.items():
-            if self.resolve_template(condition, context):
+            if self._coerce_condition(self.resolve_template(condition, context)):
                 selected_branch = branch_name
                 break
         
@@ -317,6 +344,8 @@ class WorkflowEngine:
                         if child_id not in visited:
                             visited.add(child_id)
                             queue.append(child_id)
+                            if child_id in context.node_results:
+                                continue
                             child_node = workflow.nodes.get(child_id)
                             if child_node:
                                 await self.execute_node(child_node, context)

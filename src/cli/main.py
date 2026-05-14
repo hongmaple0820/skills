@@ -11,11 +11,13 @@ from rich.tree import Tree
 
 import sys
 from pathlib import Path
+from datetime import datetime
 
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.core.models import Skill, SkillLevel, SkillCategory, Workflow
+from src.reports.daily_renderer import THEMES, list_themes, render_daily_report, render_theme_preview_gallery
 from src.storage.base import StorageManager
 from src.workflows.engine import WorkflowEngine
 from src.workflows.parser import load_workflow
@@ -287,8 +289,6 @@ def add_daily(skill, content, duration, insight, problem, plan, mood):
 @daily.command('today')
 def today_report():
     """查看今日日报"""
-    from datetime import datetime
-    
     today = datetime.now().strftime("%Y-%m-%d")
     logs = storage.daily_log_storage().query({"date": today})
     
@@ -322,6 +322,116 @@ def today_report():
     # 统计
     total_minutes = sum(log.duration_minutes for log in logs)
     console.print(Panel(f"总计：{len(logs)} 条记录 • {total_minutes} 分钟", style="green"))
+
+
+@daily.command('render')
+@click.option('--date', 'report_date', default=None, help='日报日期 YYYY-MM-DD，默认取最新一天')
+@click.option('--theme', type=click.Choice(sorted(THEMES.keys())), default='maple-ai', help='渲染主题')
+@click.option('--title', default='AI 科技日报', help='日报标题')
+@click.option('--description', default='聚焦 AI 技术推进、工作流执行与次日动作的高密度日报卡片。', help='日报简短描述')
+@click.option('--author', default='Skills Workflow', help='作者')
+@click.option('--source-name', default='Skills Platform', help='来源名称')
+@click.option('--source-statement', default='数据来自 Skills Platform 当日工作流与日报记录，仅用于信息归档与工作复盘。', help='来源声明')
+@click.option('--user-note', default='', help='用户备注')
+@click.option('--output-dir', default='data/reports', help='输出目录')
+def render_daily(report_date, theme, title, description, author, source_name, source_statement, user_note, output_dir):
+    """渲染日报展示文件：图片海报 + 交互嵌入 + 文章页"""
+    logs = storage.daily_log_storage().get_all()
+    if not logs:
+        console.print("[red]✗[/red] 没有日报数据可渲染")
+        return
+
+    target_date = report_date or max(log.date for log in logs)
+    selected_logs = [log for log in logs if log.date == target_date]
+    if not selected_logs:
+        console.print(f"[red]✗[/red] 未找到 {target_date} 的日报数据")
+        return
+
+    rendered = render_daily_report(
+        selected_logs,
+        date=target_date,
+        theme=theme,
+        title=title,
+        description=description,
+        author=author,
+        source_name=source_name,
+        source_statement=source_statement,
+        user_note=user_note,
+        output_dir=output_dir,
+    )
+
+    table = Table(title="日报渲染结果")
+    table.add_column("形式", style="cyan")
+    table.add_column("文件", style="green")
+    table.add_row("图片版海报 PNG", str(rendered.poster_png_path))
+    table.add_row("图片版海报 SVG", str(rendered.poster_svg_path))
+    table.add_row("截图底板 HTML", str(rendered.poster_html_path))
+    table.add_row("交互版组件", str(rendered.widget_path))
+    table.add_row("文章嵌入页", str(rendered.article_path))
+    console.print(table)
+    console.print("[blue]说明[/blue] 公众号正文优先使用 PNG 图片版；如需截图，可直接打开截图底板 HTML 或文章嵌入页。")
+
+
+@daily.group()
+def theme():
+    """日报主题"""
+    pass
+
+
+@theme.command('list')
+@click.option('--date', 'report_date', default=None, help='日报日期 YYYY-MM-DD，默认取最新一天')
+@click.option('--title', default='AI 科技日报', help='预览标题')
+@click.option('--description', default='用于预览所有日报主题的统一示例内容。', help='预览描述')
+@click.option('--author', default='Skills Workflow', help='作者')
+@click.option('--source-name', default='Skills Platform', help='来源名称')
+@click.option('--source-statement', default='主题预览由 Skills Platform 自动生成，用于风格确认与内容发布选型。', help='来源声明')
+@click.option('--user-note', default='', help='用户备注')
+@click.option('--output-dir', default='data/reports', help='输出目录')
+def list_daily_themes(report_date, title, description, author, source_name, source_statement, user_note, output_dir):
+    """列出并生成所有日报主题预览"""
+    logs = storage.daily_log_storage().get_all()
+    if not logs:
+        console.print("[red]✗[/red] 没有日报数据可用于主题预览")
+        return
+
+    target_date = report_date or max(log.date for log in logs)
+    selected_logs = [log for log in logs if log.date == target_date]
+    if not selected_logs:
+        console.print(f"[red]✗[/red] 未找到 {target_date} 的日报数据")
+        return
+
+    gallery_path, bundles = render_theme_preview_gallery(
+        selected_logs,
+        date=target_date,
+        title=title,
+        description=description,
+        author=author,
+        source_name=source_name,
+        source_statement=source_statement,
+        user_note=user_note,
+        output_dir=output_dir,
+    )
+
+    metadata = {item["key"]: item for item in list_themes()}
+    table = Table(title="日报主题列表")
+    table.add_column("Key", style="cyan")
+    table.add_column("名称", style="green")
+    table.add_column("说明")
+    table.add_column("品牌色")
+    table.add_column("预览")
+    for bundle in bundles:
+        theme_meta = metadata[bundle.theme]
+        swatches = f"{theme_meta['accent']} / {theme_meta['accent_2']} / {theme_meta['accent_3']}"
+        table.add_row(
+            bundle.theme,
+            bundle.name,
+            bundle.description,
+            swatches,
+            bundle.poster_html_path.name,
+        )
+
+    console.print(table)
+    console.print(f"[blue]预览页[/blue] {gallery_path}")
 
 
 # ========== 主程序 ==========

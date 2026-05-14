@@ -1,5 +1,8 @@
 """
-日报系统模块
+日报系统模块 (v1 Legacy)
+
+⚠️ 已废弃：请使用 src.storage.base.StorageManager + src.core.models.DailyLogEntry 替代。
+此模块保留以供旧数据迁移参考，不应用于新代码。
 """
 import json
 from datetime import datetime, date

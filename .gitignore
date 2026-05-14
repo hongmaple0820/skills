@@ -1,6 +1,12 @@
-```
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-```
+.pytest_cache/
+
+.atomcode/
+.claude/
+
+data/reports/*.png
+data/reports/*.svg
+data/reports/*.html
