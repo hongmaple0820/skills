@@ -15,3 +15,12 @@ data/wechat/
 # Generated template output
 templates/**/output/
 tmp_wechat_article.html
+
+# Debug/verification scripts
+_helper.py
+_verify_cli.py
+_verify_integration.py
+_verify_registry.py
+
+# Playwright MCP artifacts
+.playwright-mcp/
