@@ -1,0 +1,14 @@
+id: mist-gallery
+name: 雾感画廊
+description: 适合壁纸、句子集、情绪内容，偏轻灰、留白和画廊陈列
+
+tokens:
+  color.shell_bg: "#f7f4ef"
+  color.page_bg: "linear-gradient(180deg, #f8f5ef 0%, #efe7dc 100%)"
+  color.card_bg: "#ffffff"
+  color.accent: "#7d6f63"
+  color.accent_soft: "#ece4d8"
+  color.text: "#2e2722"
+  color.muted: "#8f8378"
+  color.line: "#e5ddd1"
+  shadow.card: "0 18px 42px rgba(48, 38, 30, 0.12)"

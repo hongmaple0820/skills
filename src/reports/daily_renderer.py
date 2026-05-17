@@ -43,6 +43,9 @@ class ThemePreviewBundle:
     poster_html_path: Path
     widget_path: Path
     article_path: Path
+    accent: str = ""
+    accent_2: str = ""
+    accent_3: str = ""
 
 
 @dataclass
@@ -67,42 +70,48 @@ class DailyReportSummary:
     entries: List[DailyLogEntry]
 
 
-THEMES = {
-    "maple-ai": {
-        "name": "AI 科技",
-        "description": "适合 AI、自动化、工程复盘类日报，强调信号密度和工作流推进。",
-        "bg_start": "#2f0f12",
-        "bg_end": "#5c1d18",
-        "panel": "#fff9f2",
-        "panel_alt": "#fff1dc",
-        "accent": "#b63a2b",
-        "accent_2": "#d89b1d",
-        "accent_3": "#557c3e",
-        "text": "#2d1a14",
-        "muted": "#70544a",
-        "glow": "#c84b31",
-        "font": "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif",
-        "tagline": "Maple red / autumn gold / natural green",
-        "eyebrow": "AI Workflow Daily",
-    },
-    "maple-editorial": {
-        "name": "品牌专栏",
-        "description": "更像专栏与内容成稿，适合品牌栏目、周报摘要和文章头图。",
-        "bg_start": "#f8efe7",
-        "bg_end": "#f1dcc2",
-        "panel": "#fffdf8",
-        "panel_alt": "#f8efdf",
-        "accent": "#a43628",
-        "accent_2": "#d4a017",
-        "accent_3": "#5c7f43",
-        "text": "#231815",
-        "muted": "#6f5849",
-        "glow": "#d68c45",
-        "font": "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif",
-        "tagline": "Editorial daily report experience",
-        "eyebrow": "Editorial Snapshot",
-    }
+
+
+# ── Token mapping: ThemeManifest dotted tokens → flat dict keys ──
+DAILY_TOKEN_MAP = {
+    "color.bg_start": "bg_start",
+    "color.bg_end": "bg_end",
+    "color.panel": "panel",
+    "color.panel_alt": "panel_alt",
+    "color.accent": "accent",
+    "color.accent_2": "accent_2",
+    "color.accent_3": "accent_3",
+    "color.text": "text",
+    "color.muted": "muted",
+    "color.glow": "glow",
+    "font.family": "font",
+    "branding.tagline": "tagline",
+    "branding.eyebrow": "eyebrow",
 }
+
+# ── Lazy singleton registry reference ──
+_REGISTRY: "TemplateRegistry | None" = None
+
+
+def _get_registry() -> "TemplateRegistry":
+    """Get or create the shared template registry singleton."""
+    global _REGISTRY
+    if _REGISTRY is None:
+        from src.templates.registry import TemplateRegistry
+        _REGISTRY = TemplateRegistry()
+        _REGISTRY.load_all()
+    return _REGISTRY
+
+
+def _resolve_theme(theme_key: str) -> dict:
+    """Resolve a theme key to a flat dict using the registry.
+
+    Falls back to loading from YAML if registry not yet fully wired.
+    """
+    theme_manifest = _get_registry().get_theme("daily.report", theme_key)
+    if theme_manifest is None:
+        raise ValueError(f"Unknown daily report theme: {theme_key}")
+    return theme_manifest.to_flat_dict(DAILY_TOKEN_MAP)
 
 
 def _slugify(value: str) -> str:
@@ -177,23 +186,23 @@ def summarize_daily_logs(
 
 
 def _theme(theme_key: str) -> dict:
-    if theme_key not in THEMES:
-        raise ValueError(f"Unknown theme: {theme_key}")
-    return THEMES[theme_key]
+    return _resolve_theme(theme_key)
 
 
 def list_themes() -> List[dict]:
+    registry = _get_registry()
+    themes = registry.list_theme_manifests("daily.report")
     return [
         {
-            "key": key,
-            "name": value["name"],
-            "description": value.get("description", ""),
-            "accent": value["accent"],
-            "accent_2": value["accent_2"],
-            "accent_3": value["accent_3"],
-            "tagline": value["tagline"],
+            "key": t.id,
+            "name": t.name,
+            "description": t.description or "",
+            "accent": t.tokens.get("color.accent", "#888"),
+            "accent_2": t.tokens.get("color.accent_2", "#888"),
+            "accent_3": t.tokens.get("color.accent_3", "#888"),
+            "tagline": t.tokens.get("branding.tagline", ""),
         }
-        for key, value in sorted(THEMES.items())
+        for t in themes
     ]
 
 
@@ -272,7 +281,10 @@ def render_theme_preview_gallery(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     bundles: List[ThemePreviewBundle] = []
-    for theme_key, theme_spec in sorted(THEMES.items()):
+    registry = _get_registry()
+    themes = registry.list_theme_manifests("daily.report")
+    for theme_manifest in themes:
+        theme_key = theme_manifest.id
         rendered = render_daily_report(
             logs,
             date=date,
@@ -288,8 +300,11 @@ def render_theme_preview_gallery(
         bundles.append(
             ThemePreviewBundle(
                 theme=theme_key,
-                name=theme_spec["name"],
-                description=theme_spec.get("description", ""),
+                name=theme_manifest.name,
+                description=theme_manifest.description or "",
+                accent=theme_manifest.tokens.get("color.accent", "#888"),
+                accent_2=theme_manifest.tokens.get("color.accent_2", "#888"),
+                accent_3=theme_manifest.tokens.get("color.accent_3", "#888"),
                 poster_png_path=rendered.poster_png_path,
                 poster_html_path=rendered.poster_html_path,
                 widget_path=rendered.widget_path,
@@ -1055,9 +1070,9 @@ def _build_theme_gallery_html(date: str, bundles: List[ThemePreviewBundle]) -> s
             <h2>{html.escape(bundle.name)}</h2>
           </div>
           <div class="swatches">
-            <span class="swatch" style="background:{THEMES[bundle.theme]['accent']}"></span>
-            <span class="swatch" style="background:{THEMES[bundle.theme]['accent_2']}"></span>
-            <span class="swatch" style="background:{THEMES[bundle.theme]['accent_3']}"></span>
+            <span class="swatch" style="background:{bundle.accent}"></span>
+            <span class="swatch" style="background:{bundle.accent_2}"></span>
+            <span class="swatch" style="background:{bundle.accent_3}"></span>
           </div>
         </div>
         <p>{html.escape(bundle.description)}</p>
@@ -1347,3 +1362,56 @@ def _build_poster_png(summary: DailyReportSummary, theme: dict, output_path: Pat
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     image.save(output_path, format="PNG")
+
+
+# ── Registry adapter ──
+
+def register_daily_adapter(registry) -> None:
+    """Register the daily report renderer with the template registry.
+
+    This adapter bridges the registry's generic renderer interface with
+    the existing daily_renderer module functions.
+    """
+    from src.templates.registry import RenderResult
+
+    def _daily_adapter(
+        manifest,
+        input_data: dict,
+        theme,
+        output_dir: str,
+    ) -> "RenderResult":
+        """Adapter: registry → daily_renderer."""
+        from src.storage.factory import StorageBackend
+
+        # Get logs for the given date from storage
+        date = input_data.get("date", "")
+        storage = StorageBackend()
+        logs = storage.daily_log_storage().get_all()
+        selected_logs = [log for log in logs if log.date == date]
+
+        rendered = render_daily_report(
+            selected_logs,
+            date=date,
+            theme=theme.id,
+            title=input_data.get("title", ""),
+            description=input_data.get("description", ""),
+            author=input_data.get("author", ""),
+            source_name=input_data.get("source_name", ""),
+            source_statement=input_data.get("source_statement", ""),
+            user_note=input_data.get("user_note", ""),
+            output_dir=output_dir,
+        )
+        return RenderResult(
+            template_id=manifest.id,
+            theme_id=theme.id,
+            output_dir=output_dir,
+            artifacts={
+                "poster_png": str(rendered.poster_png_path),
+                "poster_html": str(rendered.poster_html_path),
+                "widget": str(rendered.widget_path),
+                "article": str(rendered.article_path),
+            },
+        )
+
+    registry.register_renderer("daily_renderer", _daily_adapter)
+

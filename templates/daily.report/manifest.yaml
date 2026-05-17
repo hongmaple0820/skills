@@ -1,0 +1,91 @@
+id: daily.report
+name: 日报
+description: 技能日志日报，支持多主题渲染为海报、widget、文章
+version: "1.0.0"
+author: Skills Platform
+tags: [daily, report, skills]
+
+fields:
+  - key: title
+    type: string
+    label: 标题
+    required: true
+    placeholder: 输入日报标题
+    group: basic
+    validation:
+      min_length: 1
+      max_length: 100
+
+  - key: description
+    type: text
+    label: 描述
+    required: true
+    placeholder: 输入日报描述
+    group: basic
+
+  - key: author
+    type: string
+    label: 作者
+    default: Codex
+    required: false
+    group: basic
+
+  - key: date
+    type: date
+    label: 日期
+    required: true
+    group: basic
+
+  - key: source_name
+    type: string
+    label: 来源名称
+    default: Skills Platform
+    group: meta
+
+  - key: source_statement
+    type: text
+    label: 来源声明
+    required: false
+    group: meta
+
+  - key: user_note
+    type: text
+    label: 用户备注
+    required: false
+    group: meta
+
+slots:
+  - key: poster_svg
+    label: 海报 SVG
+    formats: [svg]
+    output_path: poster.svg
+    required: true
+
+  - key: poster_png
+    label: 海报 PNG
+    formats: [png]
+    output_path: poster.png
+    required: true
+
+  - key: widget
+    label: H5 Widget
+    formats: [html]
+    output_path: widget.html
+    required: true
+
+  - key: article
+    label: 文章页面
+    formats: [html]
+    output_path: article.html
+    required: false
+
+themes:
+  - id: maple-ai
+    name: AI 科技
+    file: themes/maple-ai.yaml
+  - id: maple-editorial
+    name: 品牌专栏
+    file: themes/maple-editorial.yaml
+
+renderer: daily_renderer
+category: report

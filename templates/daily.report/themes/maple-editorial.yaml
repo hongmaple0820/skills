@@ -1,0 +1,18 @@
+id: maple-editorial
+name: 品牌专栏
+description: 更像专栏与内容成稿，适合品牌栏目、周报摘要和文章头图
+
+tokens:
+  color.bg_start: "#f8efe7"
+  color.bg_end: "#f1dcc2"
+  color.panel: "#fffdf8"
+  color.panel_alt: "#f8efdf"
+  color.accent: "#a43628"
+  color.accent_2: "#d4a017"
+  color.accent_3: "#5c7f43"
+  color.text: "#231815"
+  color.muted: "#6f5849"
+  color.glow: "#d68c45"
+  font.family: "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
+  branding.tagline: "Editorial daily report experience"
+  branding.eyebrow: "Editorial Snapshot"

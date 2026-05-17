@@ -10,3 +10,8 @@ __pycache__/
 data/reports/*.png
 data/reports/*.svg
 data/reports/*.html
+data/wechat/
+
+# Generated template output
+templates/**/output/
+tmp_wechat_article.html

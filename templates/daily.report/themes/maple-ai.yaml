@@ -1,0 +1,18 @@
+id: maple-ai
+name: AI 科技
+description: 适合 AI、自动化、工程复盘类日报，强调信号密度和工作流推进。
+
+tokens:
+  color.bg_start: "#2f0f12"
+  color.bg_end: "#5c1d18"
+  color.panel: "#fff9f2"
+  color.panel_alt: "#fff1dc"
+  color.accent: "#b63a2b"
+  color.accent_2: "#d89b1d"
+  color.accent_3: "#557c3e"
+  color.text: "#2d1a14"
+  color.muted: "#70544a"
+  color.glow: "#c84b31"
+  font.family: "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
+  branding.tagline: "Maple red / autumn gold / natural green"
+  branding.eyebrow: "AI Workflow Daily"

@@ -1,0 +1,14 @@
+id: maple-gallery
+name: 枫色画报
+description: 适合暖色品牌内容，风格更接近编辑画报和杂志拼贴
+
+tokens:
+  color.shell_bg: "#faf4ee"
+  color.page_bg: "linear-gradient(180deg, #fbf3ea 0%, #f1e0ce 100%)"
+  color.card_bg: "#fffdfa"
+  color.accent: "#b63a2b"
+  color.accent_soft: "#f5e7d9"
+  color.text: "#2d1a14"
+  color.muted: "#7f6559"
+  color.line: "#ecd8c8"
+  shadow.card: "0 20px 48px rgba(92, 40, 28, 0.14)"

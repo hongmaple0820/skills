@@ -1,9 +1,10 @@
 """Quick verification for core v2 models and execution context."""
 
 import sys
+import os
 from datetime import datetime
 
-sys.path.insert(0, "F:\\project\\skills")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.core.models import (  # noqa: E402
     DailyLogEntry,

@@ -1,0 +1,120 @@
+id: wechat.wallpaper.gallery
+name: 壁纸画廊文章
+description: 适合壁纸分享、句子集、情绪内容的公众号文章排版，支持图片展示和导出版
+version: "1.0.0"
+author: Skills Platform
+tags: [wechat, wallpaper, gallery, article]
+
+fields:
+  - key: title
+    type: string
+    label: 文章标题
+    required: true
+    placeholder: 输入文章标题
+    group: basic
+    validation:
+      min_length: 1
+      max_length: 200
+
+  - key: author
+    type: string
+    label: 作者
+    default: Codex
+    required: false
+    group: basic
+
+  - key: publish_date
+    type: date
+    label: 发布日期
+    required: true
+    group: basic
+
+  - key: summary
+    type: text
+    label: 摘要
+    required: false
+    group: basic
+
+  - key: source_name
+    type: string
+    label: 来源名称
+    default: Skills Lab
+    group: meta
+
+  - key: source_statement
+    type: text
+    label: 来源声明
+    required: false
+    group: meta
+
+  - key: cover_image
+    type: image
+    label: 封面图片路径
+    required: false
+    group: assets
+
+  - key: markdown_file
+    type: string
+    label: Markdown 文件路径
+    required: false
+    group: content
+
+slots:
+  - key: cover_png
+    label: 封面图
+    formats: [png]
+    output_path: cover.png
+    required: true
+
+  - key: article_header_png
+    label: 文章头部图
+    formats: [png]
+    output_path: article-header.png
+    required: true
+
+  - key: article_long_png
+    label: 全文长图
+    formats: [png]
+    output_path: article-long.png
+    required: true
+
+  - key: preview_html
+    label: 预览页
+    formats: [html]
+    output_path: preview.html
+    required: true
+
+  - key: wechat_html
+    label: 公众号 HTML
+    formats: [html]
+    output_path: wechat.html
+    required: true
+
+  - key: wechat_body
+    label: 公众号正文
+    formats: [html]
+    output_path: wechat-body.html
+    required: true
+
+  - key: wechat_paste
+    label: 粘贴板 HTML
+    formats: [html]
+    output_path: wechat-paste.html
+    required: true
+
+  - key: copyboard
+    label: 复制板页面
+    formats: [html]
+    output_path: wechat-copyboard.html
+    required: true
+
+themes:
+  - id: mist-gallery
+    name: 雾感画廊
+    file: themes/mist-gallery.yaml
+  - id: maple-gallery
+    name: 枫色画报
+    file: themes/maple-gallery.yaml
+
+renderer: wechat_renderer
+category: article

@@ -17,7 +17,9 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.core.models import Skill, SkillLevel, SkillCategory, Workflow
-from src.reports.daily_renderer import THEMES, list_themes, render_daily_report, render_theme_preview_gallery
+from src.reports.daily_renderer import render_daily_report, render_theme_preview_gallery
+from src.reports.wechat_renderer import render_wechat_article
+from src.reports import list_themes, list_wechat_themes
 from src.storage.base import StorageManager
 from src.workflows.engine import WorkflowEngine
 from src.workflows.parser import load_workflow
@@ -326,7 +328,7 @@ def today_report():
 
 @daily.command('render')
 @click.option('--date', 'report_date', default=None, help='日报日期 YYYY-MM-DD，默认取最新一天')
-@click.option('--theme', type=click.Choice(sorted(THEMES.keys())), default='maple-ai', help='渲染主题')
+@click.option('--theme', default='maple-ai', help='渲染主题')
 @click.option('--title', default='AI 科技日报', help='日报标题')
 @click.option('--description', default='聚焦 AI 技术推进、工作流执行与次日动作的高密度日报卡片。', help='日报简短描述')
 @click.option('--author', default='Skills Workflow', help='作者')
@@ -432,6 +434,282 @@ def list_daily_themes(report_date, title, description, author, source_name, sour
 
     console.print(table)
     console.print(f"[blue]预览页[/blue] {gallery_path}")
+
+
+# ========== 公众号模板命令 ==========
+
+@cli.group()
+def wechat():
+    """公众号图文模板"""
+    pass
+
+
+@wechat.command("render")
+@click.argument("markdown_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--theme", default="mist-gallery", help="模板主题")
+@click.option("--output-dir", default="data/wechat", help="输出目录")
+@click.option("--author", default="Skills Workflow", help="作者名")
+@click.option("--source-name", default="Skills Platform", help="来源名称")
+@click.option("--source-statement", default=None, help="来源声明")
+@click.option("--summary", default=None, help="摘要")
+@click.option("--publish-date", default=None, help="发布日期，格式 YYYY-MM-DD")
+def render_wechat(
+    markdown_file: Path,
+    theme: str,
+    output_dir: str,
+    author: str,
+    source_name: str,
+    source_statement: str | None,
+    summary: str | None,
+    publish_date: str | None,
+):
+    """根据 Markdown 和本地图片生成公众号风格模板"""
+    rendered = render_wechat_article(
+        markdown_file,
+        theme=theme,
+        output_dir=output_dir,
+        author=author,
+        source_name=source_name,
+        source_statement=source_statement,
+        summary=summary,
+        publish_date=publish_date,
+    )
+
+    table = Table(title="公众号模板输出")
+    table.add_column("产物", style="cyan")
+    table.add_column("文件", style="green")
+    table.add_row("封面 PNG", str(rendered.cover_png_path))
+    table.add_row("首屏头图 PNG", str(rendered.article_header_png_path))
+    table.add_row("正文长图 PNG", str(rendered.article_long_png_path))
+    table.add_row("本地预览 HTML", str(rendered.preview_html_path))
+    table.add_row("公众号完整 HTML", str(rendered.wechat_html_path))
+    table.add_row("公众号正文片段", str(rendered.wechat_body_path))
+    table.add_row("公众号粘贴片段", str(rendered.wechat_paste_path))
+    table.add_row("公众号复制板", str(rendered.wechat_copyboard_path))
+    table.add_row("素材目录", str(rendered.assets_dir))
+    table.add_row("图片数量", str(rendered.image_count))
+    console.print(table)
+    console.print("[blue]说明[/blue] 优先打开 `wechat-copyboard.html`，点“一键复制富文本”后直接去公众号编辑器粘贴；图片仍需在微信编辑器内上传或托管到可访问地址。")
+
+
+@wechat.command("theme-list")
+def list_wechat_theme_cmd():
+    """列出公众号模板主题"""
+    table = Table(title="公众号模板主题")
+    table.add_column("Key", style="cyan")
+    table.add_column("名称", style="green")
+    table.add_column("说明")
+    table.add_column("强调色")
+    for item in list_wechat_themes():
+        table.add_row(item["key"], item["name"], item["description"], item["accent"])
+    console.print(table)
+
+
+# ========== 模板管理命令 ==========
+
+@cli.group()
+def template():
+    """模板管理"""
+    pass
+
+
+@template.command('list')
+def list_templates():
+    """列出所有已安装模板"""
+    from src.templates import TemplateRegistry
+
+    registry = TemplateRegistry()
+    templates = registry.list_templates()
+
+    if not templates:
+        console.print("[yellow]没有找到模板。请在 templates/ 目录下创建 manifest.yaml[/yellow]")
+        return
+
+    table = Table(title="已安装模板")
+    table.add_column("ID", style="cyan")
+    table.add_column("名称", style="green")
+    table.add_column("版本")
+    table.add_column("字段数")
+    table.add_column("主题数")
+    table.add_column("渲染器")
+    table.add_column("标签")
+
+    for t in templates:
+        table.add_row(
+            t["id"],
+            t["name"],
+            t["version"],
+            str(t["field_count"]),
+            str(t["theme_count"]),
+            t["renderer"],
+            ", ".join(t["tags"]) if t["tags"] else "-",
+        )
+
+    console.print(table)
+    console.print(f"\n共 [bold]{len(templates)}[/bold] 个模板")
+
+
+@template.command('inspect')
+@click.argument('template_id')
+def inspect_template(template_id):
+    """查看模板详情"""
+    from src.templates import TemplateRegistry
+
+    registry = TemplateRegistry()
+    detail = registry.inspect_template(template_id)
+
+    if not detail:
+        console.print(f"[red]✗[/red] 未找到模板：{template_id}")
+        return
+
+    # 基本信息
+    console.print(Panel(f"[bold]模板: {detail['name']}[/bold] (ID: {detail['id']})", style="blue"))
+    console.print(f"  版本：{detail['version']}")
+    console.print(f"  作者：{detail['author']}")
+    console.print(f"  渲染器：{detail['renderer']}")
+    console.print(f"  标签：{', '.join(detail['tags']) if detail['tags'] else '-'}")
+
+    # 字段列表
+    if detail["fields"]:
+        field_table = Table(title="字段定义")
+        field_table.add_column("Key", style="cyan")
+        field_table.add_column("类型")
+        field_table.add_column("标签", style="green")
+        field_table.add_column("必填")
+        field_table.add_column("默认值")
+        for f in detail["fields"]:
+            field_table.add_row(
+                f["key"],
+                f.get("type", "string"),
+                f.get("label", ""),
+                "是" if f.get("required") else "否",
+                str(f.get("default", "")) if f.get("default") is not None else "-",
+            )
+        console.print(field_table)
+
+    # 主题列表
+    if detail["themes"]:
+        theme_table = Table(title="主题列表")
+        theme_table.add_column("ID", style="cyan")
+        theme_table.add_column("名称", style="green")
+        theme_table.add_column("说明")
+        theme_table.add_column("Token 数")
+        for t in detail["themes"]:
+            theme_table.add_row(
+                t["id"],
+                t["name"],
+                t.get("description", ""),
+                str(t.get("token_count", 0)),
+            )
+        console.print(theme_table)
+
+
+@template.command('render')
+@click.argument('template_id')
+@click.option('--theme', '-t', default=None, help='主题 ID')
+@click.option('--output-dir', '-o', default='data/reports', help='输出目录')
+@click.option('--field', '-f', multiple=True, help='字段值 (格式：key=value)')
+def render_template_cmd(template_id, theme, output_dir, field):
+    """渲染模板"""
+    from src.templates import TemplateRegistry
+
+    # 解析字段
+    input_data = {}
+    for f in field:
+        if "=" in f:
+            key, value = f.split("=", 1)
+            input_data[key] = value
+
+    if not input_data:
+        console.print("[yellow]请提供至少一个字段值 (--field key=value)[/yellow]")
+        return
+
+    try:
+        registry = TemplateRegistry()
+        result = registry.render_template(
+            template_id,
+            input_data,
+            theme_id=theme,
+            output_dir=Path(output_dir),
+        )
+
+        console.print(f"[green]✓[/green] 模板渲染完成：{template_id}")
+        if isinstance(result, dict):
+            for key, value in result.items():
+                console.print(f"  [cyan]{key}[/]: {value}")
+        else:
+            console.print(str(result))
+
+    except ValueError as e:
+        console.print(f"[red]✗[/red] 渲染失败：{e}")
+    except Exception as e:
+        console.print(f"[red]✗[/red] 渲染异常：{e}")
+
+
+@template.command('preview')
+@click.argument('template_id')
+@click.option('--theme', '-t', default=None, help='主题 ID')
+@click.option('--field', '-f', multiple=True, help='字段值 (格式：key=value)')
+def preview_template(template_id, theme, field):
+    """预览模板（dry-run，显示字段要求和验证结果）"""
+    from src.templates import TemplateRegistry
+
+    registry = TemplateRegistry()
+    manifest = registry.get_template(template_id)
+
+    if not manifest:
+        console.print(f"[red]✗[/red] 未找到模板：{template_id}")
+        return
+
+    console.print(Panel(f"[bold]预览模板: {manifest.name}[/bold] (ID: {manifest.id})", style="green"))
+
+    # 显示所需字段
+    console.print("\n[bold]必填字段:[/bold]")
+    has_required = False
+    for f in manifest.fields:
+        if f.required:
+            has_required = True
+            desc = f"  [cyan]{f.key}[/] ({f.label})"
+            if f.type:
+                desc += f" [{f.type}]"
+            if f.default is not None:
+                desc += f" 默认: {f.default}"
+            if f.description:
+                desc += f"\n    {f.description}"
+            console.print(desc)
+    if not has_required:
+        console.print("  (无必填字段)")
+
+    console.print("\n[bold]可选字段:[/bold]")
+    for f in manifest.fields:
+        if not f.required:
+            desc = f"  [dim]{f.key}[/] ({f.label})"
+            if f.type:
+                desc += f" [{f.type}]"
+            if f.default is not None:
+                desc += f" 默认: {f.default}"
+            console.print(desc)
+
+    # 显示输出
+    console.print("\n[bold]将生成:[/bold]")
+    for slot in manifest.slots:
+        console.print(f"  [green]{slot.label}[/] ({', '.join(slot.formats)})")
+
+    # 如果提供了字段，做验证
+    if field:
+        input_data = {}
+        for f in field:
+            if "=" in f:
+                key, value = f.split("=", 1)
+                input_data[key] = value
+
+        errors = manifest.validate_fields(input_data)
+        if errors:
+            console.print("\n[red]✗ 验证失败:[/red]")
+            for err in errors:
+                console.print(f"  [red]- {err}[/]")
+        else:
+            console.print("\n[green]✓ 字段验证通过[/green]")
 
 
 # ========== 主程序 ==========
